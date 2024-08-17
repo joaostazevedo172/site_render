@@ -1,81 +1,73 @@
 const express = require('express');
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
-const multer = require('multer');
+const fileUpload = require('express-fileupload');
 const path = require('path');
 
 const app = express();
 
-// Middleware para servir arquivos estáticos do diretório atual
-app.use(express.static(path.join(__dirname)));
-
-// Middleware para processar corpo das requisições
+// Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(fileUpload()); // Middleware para upload de arquivos
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Configuração do banco de dadosconst con = mysql.createConnection({
-host: "sql10.freemysqlhosting.net",
+// Configuração da conexão com o banco de dados
+const con = mysql.createConnection({
+    host: "sql10.freemysqlhosting.net",
     user: "sql10725595",
-        password: "bWvpTgI5NR",
-            database: "sql10725595"
+    password: "bWvpTgI5NR",
+    database: "sql10725595"
 });
 
 con.connect(function (err) {
-    if (err) {
-        console.error("Erro ao conectar ao MySQL:", err);
-        process.exit(1); // Encerra o processo com um código de erro
-    }
+    if (err) throw err;
     console.log("Conectado ao MySQL!");
 });
 
-// Configuração do multer para upload de arquivosconst storage = multer.memoryStorage(); // Armazenamento em memóriaconst upload = multer({ storage: storage });
-
-// Rotas para servir os arquivos HTML
+// Rotas
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'menu.html'));
+    res.sendFile(__dirname + '/menu.html');
 });
 
 app.get('/formulario', (req, res) => {
-    res.sendFile(path.join(__dirname, 'form.html'));
+    res.sendFile(__dirname + '/form.html');
 });
 
 app.get('/delete', (req, res) => {
-    res.sendFile(path.join(__dirname, 'delete.html'));
+    res.sendFile(__dirname + '/delete.html');
 });
 
 app.get('/search', (req, res) => {
-    res.sendFile(path.join(__dirname, 'search.html'));
+    res.sendFile(__dirname + '/search.html');
 });
 
 app.get('/consulta', (req, res) => {
-    res.sendFile(path.join(__dirname, 'consulta.html'));
+    res.sendFile(__dirname + '/consulta.html');
 });
 
 app.get('/update', (req, res) => {
-    res.sendFile(path.join(__dirname, 'update.html'));
+    res.sendFile(__dirname + '/update.html');
 });
 
 app.get('/listar', (req, res) => {
-    res.sendFile(path.join(__dirname, 'listar.html'));
+    res.sendFile(__dirname + '/listar.html');
 });
 
-// API para obter usuários
 app.get('/usuarios', (req, res) => {
     const sql = "SELECT * FROM usuario";
     con.query(sql, function (err, result) {
-        if (err) {
-            console.error("Erro ao obter usuários:", err);
-            res.status(500).send("Erro ao obter os dados. Por favor, tente novamente.");
-            return;
-        }
+        if (err) throw err;
         res.json(result);
     });
 });
 
-// API para submeter um novo usuário
-app.post('/submit', upload.single('image'), (req, res) => {
+// Rota para submeter dados e imagem
+app.post('/submit', (req, res) => {
     const { name, password, phone } = req.body;
-    // Sem tratamento de imagem devido ao uso de storage em memóriaconst sql = "INSERT INTO usuario (nome, senha, telefone) VALUES (?, ?, ?)";
-    con.query(sql, [name, password, phone], function (err, result) {
+    const image = req.files && req.files.image ? req.files.image.data : null;
+
+    const sql = "INSERT INTO usuario (nome, senha, telefone, imagem) VALUES (?, ?, ?, ?)";
+    con.query(sql, [name, password, phone, image], function (err, result) {
         if (err) {
             console.error("Erro ao inserir no banco de dados:", err);
             res.status(500).send("Erro ao salvar os dados. Por favor, tente novamente.");
@@ -86,7 +78,7 @@ app.post('/submit', upload.single('image'), (req, res) => {
     });
 });
 
-// API para deletar um usuário
+// Rota para deletar usuário
 app.post('/delete', (req, res) => {
     const { id } = req.body;
     const sql = "DELETE FROM usuario WHERE id = ?";
@@ -104,11 +96,11 @@ app.post('/delete', (req, res) => {
     });
 });
 
-// API para buscar usuários com base em uma consulta
+// Rota para buscar dados de usuário
 app.get('/search-results', (req, res) => {
     const { query } = req.query;
 
-    let sql = "SELECT id, nome, telefone, senha FROM usuario";
+    let sql = "SELECT id, nome, telefone, senha, imagem FROM usuario";
     const params = [];
 
     if (query !== '*') {
@@ -127,10 +119,12 @@ app.get('/search-results', (req, res) => {
     });
 });
 
-// API para atualizar um usuário
-app.post('/update', upload.single('image'), (req, res) => {
+// Rota para atualizar dados de usuário
+app.post('/update', (req, res) => {
     const { id, name, password, phone } = req.body;
-    // Sem tratamento de imagem devido ao uso de storage em memórialet sql = "UPDATE usuario SET ";
+    const image = req.files && req.files.image ? req.files.image.data : null;
+
+    let sql = "UPDATE usuario SET ";
     const params = [];
 
     if (name) {
@@ -144,6 +138,10 @@ app.post('/update', upload.single('image'), (req, res) => {
     if (phone) {
         sql += "telefone = ?, ";
         params.push(phone);
+    }
+    if (image) {
+        sql += "imagem = ?, ";
+        params.push(image);
     }
 
     sql = sql.slice(0, -2); // Remove a última vírgula
@@ -164,7 +162,29 @@ app.post('/update', upload.single('image'), (req, res) => {
     });
 });
 
-// Inicializa o servidorconstPORT = process.env.PORT || 3000;
+// Rota para exibir imagem do usuário
+app.get('/usuario/:id/imagem', (req, res) => {
+    const { id } = req.params;
+    const sql = "SELECT imagem FROM usuario WHERE id = ?";
+
+    con.query(sql, [id], function (err, result) {
+        if (err) {
+            console.error("Erro ao buscar no banco de dados:", err);
+            res.status(500).send("Erro ao buscar a imagem. Por favor, tente novamente.");
+            return;
+        }
+
+        if (result.length > 0 && result[0].imagem) {
+            res.set('Content-Type', 'image/jpeg');
+            res.send(result[0].imagem);
+        } else {
+            res.status(404).send("Imagem não encontrada.");
+        }
+    });
+});
+
+// Iniciar o servidor
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
 });
