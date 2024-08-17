@@ -24,19 +24,7 @@ con.connect(function (err) {
     console.log("Conectado ao MySQL!");
 });
 
-// Configuração do multer para upload de arquivosconst storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/'); // Diretório onde as imagens serão salvas
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname)); // Nome único para cada imagem
-    }
-});
-
-const upload = multer({ storage: storage });
-
-// Servir o diretório de uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Configuração do multer para upload de arquivosconst storage = multer.memoryStorage(); // Armazenamento em memóriaconst upload = multer({ storage: storage });
 
 // Rotas para servir os arquivos HTML
 app.get('/', (req, res) => {
@@ -79,10 +67,8 @@ app.get('/usuarios', (req, res) => {
 // API para submeter um novo usuário
 app.post('/submit', upload.single('image'), (req, res) => {
     const { name, password, phone } = req.body;
-    const imagePath = req.file ? req.file.path : null;
-
-    const sql = "INSERT INTO usuario (nome, senha, telefone, imagem) VALUES (?, ?, ?, ?)";
-    con.query(sql, [name, password, phone, imagePath], function (err, result) {
+    // Sem tratamento de imagem devido ao uso de storage em memóriaconst sql = "INSERT INTO usuario (nome, senha, telefone) VALUES (?, ?, ?)";
+    con.query(sql, [name, password, phone], function (err, result) {
         if (err) {
             console.error("Erro ao inserir no banco de dados:", err);
             res.status(500).send("Erro ao salvar os dados. Por favor, tente novamente.");
@@ -137,9 +123,7 @@ app.get('/search-results', (req, res) => {
 // API para atualizar um usuário
 app.post('/update', upload.single('image'), (req, res) => {
     const { id, name, password, phone } = req.body;
-    const imagePath = req.file ? req.file.path : null;
-
-    let sql = "UPDATE usuario SET ";
+    // Sem tratamento de imagem devido ao uso de storage em memórialet sql = "UPDATE usuario SET ";
     const params = [];
 
     if (name) {
@@ -153,10 +137,6 @@ app.post('/update', upload.single('image'), (req, res) => {
     if (phone) {
         sql += "telefone = ?, ";
         params.push(phone);
-    }
-    if (imagePath) {
-        sql += "imagem = ?, ";
-        params.push(imagePath);
     }
 
     sql = sql.slice(0, -2); // Remove a última vírgula
