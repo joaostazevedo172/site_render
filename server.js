@@ -137,7 +137,7 @@ app.get('/search-results', (req, res) => {
 // API para atualizar um usuário
 app.post('/update', upload.single('image'), (req, res) => {
     const { id, name, password, phone } = req.body;
-    // Somente atualiza a imagem se um novo arquivo for enviadoconst imagePath = req.file ? req.file.path : null;
+    const imagePath = req.file ? req.file.path : null;
 
     let sql = "UPDATE usuario SET ";
     const params = [];
