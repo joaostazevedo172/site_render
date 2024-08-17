@@ -12,23 +12,22 @@ app.use(express.static(path.join(__dirname)));
 // Middleware para processar corpo das requisições
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Configuração do banco de dados
-const con = mysql.createConnection({
-    host: "sql10.freemysqlhosting.net",
+// Configuração do banco de dadosconst con = mysql.createConnection({
+host: "sql10.freemysqlhosting.net",
     user: "sql10725595",
-    password: "bWvpTgI5NR",
-    database: "sql10725595"
+        password: "bWvpTgI5NR",
+            database: "sql10725595"
 });
 
 con.connect(function (err) {
-    if (err) throw err;
+    if (err) {
+        console.error("Erro ao conectar ao MySQL:", err);
+        process.exit(1); // Encerra o processo com um código de erro
+    }
     console.log("Conectado ao MySQL!");
 });
 
-// Configuração do multer para upload de arquivos
-const storage = multer.memoryStorage(); // Armazenamento em memória
-
-const upload = multer({ storage: storage });
+// Configuração do multer para upload de arquivosconst storage = multer.memoryStorage(); // Armazenamento em memóriaconst upload = multer({ storage: storage });
 
 // Rotas para servir os arquivos HTML
 app.get('/', (req, res) => {
@@ -63,7 +62,11 @@ app.get('/listar', (req, res) => {
 app.get('/usuarios', (req, res) => {
     const sql = "SELECT * FROM usuario";
     con.query(sql, function (err, result) {
-        if (err) throw err;
+        if (err) {
+            console.error("Erro ao obter usuários:", err);
+            res.status(500).send("Erro ao obter os dados. Por favor, tente novamente.");
+            return;
+        }
         res.json(result);
     });
 });
@@ -71,9 +74,7 @@ app.get('/usuarios', (req, res) => {
 // API para submeter um novo usuário
 app.post('/submit', upload.single('image'), (req, res) => {
     const { name, password, phone } = req.body;
-    // Sem tratamento de imagem devido ao uso de storage em memória
-
-    const sql = "INSERT INTO usuario (nome, senha, telefone) VALUES (?, ?, ?)";
+    // Sem tratamento de imagem devido ao uso de storage em memóriaconst sql = "INSERT INTO usuario (nome, senha, telefone) VALUES (?, ?, ?)";
     con.query(sql, [name, password, phone], function (err, result) {
         if (err) {
             console.error("Erro ao inserir no banco de dados:", err);
@@ -129,9 +130,7 @@ app.get('/search-results', (req, res) => {
 // API para atualizar um usuário
 app.post('/update', upload.single('image'), (req, res) => {
     const { id, name, password, phone } = req.body;
-    // Sem tratamento de imagem devido ao uso de storage em memória
-
-    let sql = "UPDATE usuario SET ";
+    // Sem tratamento de imagem devido ao uso de storage em memórialet sql = "UPDATE usuario SET ";
     const params = [];
 
     if (name) {
@@ -147,7 +146,7 @@ app.post('/update', upload.single('image'), (req, res) => {
         params.push(phone);
     }
 
-    sql = sql.slice(0, -2);
+    sql = sql.slice(0, -2); // Remove a última vírgula
     sql += " WHERE id = ?";
     params.push(id);
 
@@ -165,8 +164,7 @@ app.post('/update', upload.single('image'), (req, res) => {
     });
 });
 
-// Inicializa o servidor
-const PORT = process.env.PORT || 3000;
+// Inicializa o servidorconstPORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(Servidor rodando na porta ${PORT});
+    console.log(`Servidor rodando na porta ${PORT}`);
 });
