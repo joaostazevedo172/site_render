@@ -15,7 +15,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 const con = mysql.createConnection({
     host: "sql110.byethost33.com",
     user: "b33_37133203",
-    password: "Epa2549J@",
+    password: "Epa2548J@",
     database: "b33_37133203_swiii"
 });
 
