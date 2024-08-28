@@ -19,44 +19,52 @@ const con = mysql.createConnection({
     database: "b33_37133203_swiii"
 });
 
+// Conectar ao banco de dados
 con.connect(function (err) {
-    if (err) throw err;
+    if (err) {
+        console.error("Erro ao conectar ao MySQL:", err);
+        process.exit(1); // Encerra o processo se a conexão falhar
+    }
     console.log("Conectado ao MySQL!");
 });
 
 // Rotas
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/menu.html');
+    res.sendFile(path.join(__dirname, 'menu.html'));
 });
 
 app.get('/formulario', (req, res) => {
-    res.sendFile(__dirname + '/form.html');
+    res.sendFile(path.join(__dirname, 'form.html'));
 });
 
 app.get('/delete', (req, res) => {
-    res.sendFile(__dirname + '/delete.html');
+    res.sendFile(path.join(__dirname, 'delete.html'));
 });
 
 app.get('/search', (req, res) => {
-    res.sendFile(__dirname + '/search.html');
+    res.sendFile(path.join(__dirname, 'search.html'));
 });
 
 app.get('/consulta', (req, res) => {
-    res.sendFile(__dirname + '/consulta.html');
+    res.sendFile(path.join(__dirname, 'consulta.html'));
 });
 
 app.get('/update', (req, res) => {
-    res.sendFile(__dirname + '/update.html');
+    res.sendFile(path.join(__dirname, 'update.html'));
 });
 
 app.get('/listar', (req, res) => {
-    res.sendFile(__dirname + '/listar.html');
+    res.sendFile(path.join(__dirname, 'listar.html'));
 });
 
 app.get('/usuarios', (req, res) => {
     const sql = "SELECT * FROM usuario";
-    con.query(sql, function (err, result) {
-        if (err) throw err;
+    con.query(sql, (err, result) => {
+        if (err) {
+            console.error("Erro ao buscar usuários:", err);
+            res.status(500).send("Erro ao buscar usuários.");
+            return;
+        }
         res.json(result);
     });
 });
@@ -67,7 +75,7 @@ app.post('/submit', (req, res) => {
     const image = req.files && req.files.image ? req.files.image.data : null;
 
     const sql = "INSERT INTO usuario (nome, senha, telefone, imagem) VALUES (?, ?, ?, ?)";
-    con.query(sql, [name, password, phone, image], function (err, result) {
+    con.query(sql, [name, password, phone, image], (err, result) => {
         if (err) {
             console.error("Erro ao inserir no banco de dados:", err);
             res.status(500).send("Erro ao salvar os dados. Por favor, tente novamente.");
@@ -82,7 +90,7 @@ app.post('/submit', (req, res) => {
 app.post('/delete', (req, res) => {
     const { id } = req.body;
     const sql = "DELETE FROM usuario WHERE id = ?";
-    con.query(sql, [id], function (err, result) {
+    con.query(sql, [id], (err, result) => {
         if (err) {
             console.error("Erro ao excluir do banco de dados:", err);
             res.status(500).send("Erro ao excluir o usuário. Por favor, tente novamente.");
@@ -109,7 +117,7 @@ app.get('/search-results', (req, res) => {
         params.push(likeQuery, likeQuery, likeQuery, query);
     }
 
-    con.query(sql, params, function (err, result) {
+    con.query(sql, params, (err, result) => {
         if (err) {
             console.error("Erro ao buscar no banco de dados:", err);
             res.status(500).send("Erro ao buscar os dados. Por favor, tente novamente.");
@@ -148,7 +156,7 @@ app.post('/update', (req, res) => {
     sql += " WHERE id = ?";
     params.push(id);
 
-    con.query(sql, params, function (err, result) {
+    con.query(sql, params, (err, result) => {
         if (err) {
             console.error("Erro ao atualizar o banco de dados:", err);
             res.status(500).send("Erro ao atualizar os dados. Por favor, tente novamente.");
@@ -167,9 +175,9 @@ app.get('/usuario/:id/imagem', (req, res) => {
     const { id } = req.params;
     const sql = "SELECT imagem FROM usuario WHERE id = ?";
 
-    con.query(sql, [id], function (err, result) {
+    con.query(sql, [id], (err, result) => {
         if (err) {
-            console.error("Erro ao buscar no banco de dados:", err);
+            console.error("Erro ao buscar a imagem:", err);
             res.status(500).send("Erro ao buscar a imagem. Por favor, tente novamente.");
             return;
         }
